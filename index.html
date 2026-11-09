@@ -72,6 +72,27 @@
     </div>
   </div>
 
+  
+  <!-- Park accessibility results -->
+  <div id="accessibility-results"
+       style="
+         position: absolute;
+         top: 220px;
+         left: 20px;
+         background: white;
+         padding: 15px;
+         border-radius: 6px;
+         box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+         font-family: Arial, sans-serif;
+         z-index: 2;
+         display: none;
+         max-width: 250px;
+       ">
+    <h3>Park Accessibility</h3>
+    <p id="park-count"></p>
+  </div>
+
+
   <script>
 
     // Initialize the MapLibre map
@@ -225,6 +246,41 @@
       if (bufferSource) {
         bufferSource.setData(buffer);
       }
+
+      
+// Load park polygons and count those intersecting the buffer
+fetch('./parks-polygon-representation.geojson')
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('Could not load park GeoJSON');
+    }
+    return response.json();
+  })
+  .then(parkData => {
+
+    let parkCount = 0;
+
+    parkData.features.forEach(park => {
+
+      if (park.geometry &&
+          turf.booleanIntersects(park, buffer)) {
+        parkCount++;
+      }
+
+    });
+
+    // Display accessibility results
+    document.getElementById('park-count').textContent =
+      parkCount + ' park polygons intersect the 500 m buffer.';
+
+    document.getElementById('accessibility-results')
+      .style.display = 'block';
+
+  })
+  .catch(error => {
+    console.error('Park accessibility analysis failed:', error);
+  });
+
 
       // Remove previous marker
       if (locationMarker) {
