@@ -143,6 +143,36 @@
       map.getCanvas().style.cursor = '';
     });
 
+    
+    // Store the user's selected location
+    let selectedLocation = null;
+    let locationMarker = null;
+
+    // Allow users to select a location by clicking the map
+    map.on('click', (e) => {
+
+      // Save the selected coordinates
+      selectedLocation = [
+        e.lngLat.lng,
+        e.lngLat.lat
+      ];
+
+      // Remove the previous marker if one exists
+      if (locationMarker) {
+        locationMarker.remove();
+      }
+
+      // Create a marker at the selected location
+      locationMarker = new maplibregl.Marker({
+        color: '#E76F51'
+      })
+        .setLngLat(selectedLocation)
+        .addTo(map);
+
+      console.log('Selected location:', selectedLocation);
+    });
+
+
   </script>
 
 </body>
