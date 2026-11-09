@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -5,14 +6,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Vancouver Parks and Green Spaces</title>
+  <title>Vancouver Park Accessibility</title>
 
   <!-- MapLibre GL JS -->
   <link
     href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css"
     rel="stylesheet"
   >
-
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 
   <!-- Turf.js for geographic analysis -->
@@ -29,10 +29,11 @@
 
   <!-- Map title -->
   <div class="map-title">
-    <h1>Vancouver Parks and Green Spaces</h1>
+    <h1>Vancouver Park Accessibility</h1>
     <p>
-      Exploring the distribution and size of public parks
-      across Vancouver, British Columbia.
+      Exploring Vancouver's public parks and their
+      accessibility within a 500-metre radius.
+      Click anywhere on the map to select a location.
     </p>
   </div>
 
@@ -54,6 +55,21 @@
       <span class="legend-color large"></span>
       <span>Large (5+ ha)</span>
     </div>
+
+    <div class="legend-item">
+      <span
+        style="
+          display:inline-block;
+          width:18px;
+          height:18px;
+          background:rgba(231,111,81,0.18);
+          border:2px solid #E76F51;
+          box-sizing:border-box;
+          margin-right:8px;
+        "
+      ></span>
+      <span>500 m accessibility buffer</span>
+    </div>
   </div>
 
   <script>
@@ -69,26 +85,66 @@
     // Add zoom and rotation controls
     map.addControl(new maplibregl.NavigationControl());
 
-    // Add popups when a park polygon is clicked
+    // Store the user's selected location
+    let selectedLocation = null;
+    let locationMarker = null;
+
+    // Add buffer source and layers after map loads
+    map.on('load', () => {
+
+      // Empty GeoJSON source for accessibility buffer
+      map.addSource('accessibility-buffer', {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: []
+        }
+      });
+
+      // Transparent orange buffer fill
+      map.addLayer({
+        id: 'buffer-fill',
+        type: 'fill',
+        source: 'accessibility-buffer',
+        paint: {
+          'fill-color': '#E76F51',
+          'fill-opacity': 0.18
+        }
+      });
+
+      // Orange outline around buffer
+      map.addLayer({
+        id: 'buffer-outline',
+        type: 'line',
+        source: 'accessibility-buffer',
+        paint: {
+          'line-color': '#E76F51',
+          'line-width': 2
+        }
+      });
+
+    });
+
+    // Display park information when clicked
     map.on('click', 'vancouver-parks-fill', (e) => {
 
       const park = e.features[0].properties;
 
-      // Read attributes from the GeoJSON
+      // Read attributes from GeoJSON
       const name = park.park_name || 'Unnamed Park';
       const rawArea = park.area_hectare;
       const area = Number(rawArea);
       const classification =
         park.classification || 'Not specified';
 
-      // Check whether the area value is available
+      // Check whether area is available
       const hasArea =
         rawArea !== null &&
         rawArea !== undefined &&
         String(rawArea).trim() !== '' &&
         Number.isFinite(area);
 
-      // Determine park size using the legend thresholds
+      // Determine park size using legend thresholds
       let sizeCategory = 'Area unavailable';
 
       if (hasArea) {
@@ -126,7 +182,7 @@
       typeText.textContent = 'Classification: ' + classification;
       popup.appendChild(typeText);
 
-      // Display popup at the clicked location
+      // Display popup at clicked location
       new maplibregl.Popup({
         closeButton: true,
         closeOnClick: true
@@ -134,95 +190,62 @@
         .setLngLat(e.lngLat)
         .setDOMContent(popup)
         .addTo(map);
+
     });
 
-    // Change cursor when hovering over park polygons
+    // Change cursor when hovering over parks
     map.on('mouseenter', 'vancouver-parks-fill', () => {
       map.getCanvas().style.cursor = 'pointer';
     });
 
-    // Restore cursor when leaving park polygons
+    // Restore cursor when leaving parks
     map.on('mouseleave', 'vancouver-parks-fill', () => {
       map.getCanvas().style.cursor = '';
     });
 
-    // Add an empty GeoJSON source for the distance buffer
-    map.on('load', 90 => {
-
-      map.addSource('accessibility-buffer', {
-        type: 'geojson',
-        data: {
-          type: 'FeatureCollection',
-          features: []
-        }
-      });
-
-      // Add an outline around the buffer
-      map.addLayer({
-        id: 'buffer-outline',
-        type: 'line',
-        source: 'accessibility-buffer',
-        paint: {
-          'fill-color': '#E76F51',
-          'fill-opacity': 0.18
-        }
-      });
-
-      // Add an outline around the buffer
-      map.addLayer({
-        id: 'buffer-outline',
-        type: 'line',
-        source: 'accessibility-buffer',
-        paint: {
-          'line-color': '#E76F51',
-          'line-width': 2
-        }
-      });
-
-    });
-
-    
-    // Store the user's selected location
-    let selectedLocation = null;
-    let locationMarker = null;
-
     // Allow users to select a location by clicking the map
     map.on('click', (e) => {
 
-      // Save the selected coordinates
+      // Save selected coordinates
       selectedLocation = [
         e.lngLat.lng,
         e.lngLat.lat
       ];
 
-      // Craete a 500-mater buffer around selected point using Turf.js
+      // Create a 500-metre buffer using Turf.js
       const buffer = turf.buffer(
         turf.point(selectedLocation),
         0.5,
         { units: 'kilometers' }
       );
 
-      // Update the buffer layer 
-      map.getSource('accessibility-buffer').setData(buffer);
+      // Update the buffer GeoJSON source
+      const bufferSource = map.getSource('accessibility-buffer');
 
-      // Remove the previous marker if one exists
+      if (bufferSource) {
+        bufferSource.setData(buffer);
+      }
+
+      // Remove previous marker
       if (locationMarker) {
         locationMarker.remove();
       }
 
-      // Create a marker at the selected location
+      // Add an orange marker at selected location
       locationMarker = new maplibregl.Marker({
         color: '#E76F51'
       })
         .setLngLat(selectedLocation)
         .addTo(map);
 
+      // Log selected location for testing
       console.log('Selected location:', selectedLocation);
-    });
 
+    });
 
   </script>
 
 </body>
 </html>
+
 
