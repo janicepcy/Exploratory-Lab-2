@@ -1,75 +1,150 @@
-
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vancouver Park Accessibility</title>
+
+  <title>Vancouver Parks and Green Spaces</title>
 
   <!-- MapLibre GL JS -->
- <link href="https://unpkg.com/maplibre-gl@5.15.0/dist/maplibre-gl.css" rel="stylesheet">
-<script src="https://unpkg.com/maplibre-gl@5.15.0/dist/maplibre-gl.js"></script>
+  <link
+    href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css"
+    rel="stylesheet"
+  >
 
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-    }
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 
-    #map {
-      width: 100%;
-      height: 100vh;
-    }
-  </style>
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="./style.css">
 </head>
 
 <body>
+
+  <!-- Interactive map -->
   <div id="map"></div>
 
+  <!-- Map title -->
+  <div class="map-title">
+    <h1>Vancouver Parks and Green Spaces</h1>
+    <p>
+      Exploring the distribution and size of public parks
+      across Vancouver, British Columbia.
+    </p>
+  </div>
+
+  <!-- Map legend -->
+  <div class="map-legend">
+    <h3>Park Area</h3>
+
+    <div class="legend-item">
+      <span class="legend-color small"></span>
+      <span>Small (&lt; 1 ha)</span>
+    </div>
+
+    <div class="legend-item">
+      <span class="legend-color medium"></span>
+      <span>Medium (1–5 ha)</span>
+    </div>
+
+    <div class="legend-item">
+      <span class="legend-color large"></span>
+      <span>Large (5+ ha)</span>
+    </div>
+  </div>
+
   <script>
-    // Create the map, centred on Vancouver
+
+    // Initialize the MapLibre map
     const map = new maplibregl.Map({
       container: 'map',
-      style: 'https://tiles.openfreemap.org/styles/liberty',
+      style: './vancouver-parks-style(export).json',
       center: [-123.12, 49.25],
-      zoom: 11
+      zoom: 11.5
     });
 
     // Add zoom and rotation controls
     map.addControl(new maplibregl.NavigationControl());
 
-    // Load the parks data after the map loads
-    map.on('load', () => {
+    // Add popups when a park polygon is clicked
+    map.on('click', 'vancouver-parks-fill', (e) => {
 
-      map.addSource('parks', {
-        type: 'geojson',
-        data: './parks-polygon-representation.geojson'
-      });
+      const park = e.features[0].properties;
 
-      // Display park polygons
-      map.addLayer({
-        id: 'parks-fill',
-        type: 'fill',
-        source: 'parks',
-        paint: {
-          'fill-color': '#65A87A',
-          'fill-opacity': 0.65
+      // Read attributes from the GeoJSON
+      const name = park.park_name || 'Unnamed Park';
+      const rawArea = park.area_hectare;
+      const area = Number(rawArea);
+      const classification =
+        park.classification || 'Not specified';
+
+      // Check whether the area value is available
+      const hasArea =
+        rawArea !== null &&
+        rawArea !== undefined &&
+        String(rawArea).trim() !== '' &&
+        Number.isFinite(area);
+
+      // Determine park size using the legend thresholds
+      let sizeCategory = 'Area unavailable';
+
+      if (hasArea) {
+        if (area < 1) {
+          sizeCategory = 'Small park (< 1 ha)';
+        } else if (area < 5) {
+          sizeCategory = 'Medium park (1–5 ha)';
+        } else {
+          sizeCategory = 'Large park (5+ ha)';
         }
-      });
+      }
 
-      // Add park outlines
-      map.addLayer({
-        id: 'parks-outline',
-        type: 'line',
-        source: 'parks',
-        paint: {
-          'line-color': '#326B46',
-          'line-width': 1
-        }
-      });
+      // Create popup content
+      const popup = document.createElement('div');
 
+      // Park name
+      const heading = document.createElement('h3');
+      heading.textContent = name;
+      heading.style.margin = '0 0 10px 0';
+      popup.appendChild(heading);
+
+      // Park area
+      const areaText = document.createElement('p');
+      areaText.textContent = 'Area: ' +
+        (hasArea ? area.toFixed(2) + ' ha' : 'Not available');
+      popup.appendChild(areaText);
+
+      // Park size category
+      const sizeText = document.createElement('p');
+      sizeText.textContent = 'Size category: ' + sizeCategory;
+      popup.appendChild(sizeText);
+
+      // Park classification
+      const typeText = document.createElement('p');
+      typeText.textContent = 'Classification: ' + classification;
+      popup.appendChild(typeText);
+
+      // Display popup at the clicked location
+      new maplibregl.Popup({
+        closeButton: true,
+        closeOnClick: true
+      })
+        .setLngLat(e.lngLat)
+        .setDOMContent(popup)
+        .addTo(map);
     });
+
+    // Change cursor when hovering over park polygons
+    map.on('mouseenter', 'vancouver-parks-fill', () => {
+      map.getCanvas().style.cursor = 'pointer';
+    });
+
+    // Restore cursor when leaving park polygons
+    map.on('mouseleave', 'vancouver-parks-fill', () => {
+      map.getCanvas().style.cursor = '';
+    });
+
   </script>
+
 </body>
 </html>
 
