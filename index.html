@@ -15,6 +15,9 @@
 
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 
+  <!-- Turf.js for geographic analysis -->
+  <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
+
   <!-- Custom CSS -->
   <link rel="stylesheet" href="./style.css">
 </head>
@@ -143,6 +146,41 @@
       map.getCanvas().style.cursor = '';
     });
 
+    // Add an empty GeoJSON source for the distance buffer
+    map.on('load', 90 => {
+
+      map.addSource('accessibility-buffer', {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: []
+        }
+      });
+
+      // Add an outline around the buffer
+      map.addLayer({
+        id: 'buffer-outline',
+        type: 'line',
+        source: 'accessibility-buffer',
+        paint: {
+          'fill-color': '#E76F51',
+          'fill-opacity': 0.18
+        }
+      });
+
+      // Add an outline around the buffer
+      map.addLayer({
+        id: 'buffer-outline',
+        type: 'line',
+        source: 'accessibility-buffer',
+        paint: {
+          'line-color': '#E76F51',
+          'line-width': 2
+        }
+      });
+
+    });
+
     
     // Store the user's selected location
     let selectedLocation = null;
@@ -156,6 +194,16 @@
         e.lngLat.lng,
         e.lngLat.lat
       ];
+
+      // Craete a 500-mater buffer around selected point using Turf.js
+      const buffer = turf.buffer(
+        turf.point(selectedLocation),
+        0.5,
+        { units: 'kilometers' }
+      );
+
+      // Update the buffer layer 
+      map.getSource('accessibility-buffer').setData(buffer);
 
       // Remove the previous marker if one exists
       if (locationMarker) {
