@@ -90,8 +90,11 @@
        ">
     <h3>Park Accessibility</h3>
     <p id="park-count"></p>
+    <h3>Park Accessibility</h3>
+    <p id="park-count"></p>
+    <div id="park-size-breakdown"></div>
+  
   </div>
-
 
   <script>
 
@@ -314,6 +317,36 @@ fetch('./parks-polygon-representation.geojson')
         accessibleParks.push(park);
       }
     });
+
+    
+let smallParks = 0;
+let mediumParks = 0;
+let largeParks = 0;
+let unknownParks = 0;
+
+// Classify parks within the 500 m buffer
+accessibleParks.forEach(park => {
+    const rawArea = park.properties.area_hectare;
+
+    if (rawArea === null ||
+        rawArea === undefined ||
+        String(rawArea).trim() === '' ||
+        !Number.isFinite(Number(rawArea))) {
+        unknownParks++;
+        return;
+    }
+
+    const area = Number(rawArea);
+
+    if (area < 1) {
+        smallParks++;
+    } else if (area < 5) {
+        mediumParks++;
+    } else {
+        largeParks++;
+    }
+});
+
 
     // Update the pulsing park layer
     map.getSource('accessible-parks').setData({
