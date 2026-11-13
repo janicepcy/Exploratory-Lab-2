@@ -14,7 +14,7 @@ The map was developed using MapLibre GL JS and Turf.js, combining geographic vis
 
 **Screenshot:**
 
-![Uploading Screenshot 2026-11-13 at 4.40.10 PM.png…]()
+![Vancouver Park Accessibility Map](screenshot.png)
 
 ## Map Features and Interactivity
 
