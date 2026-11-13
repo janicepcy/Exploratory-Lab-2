@@ -144,6 +144,51 @@
         }
       });
 
+      // Source for parks intersecting the buffer
+      map.addSource('accessible-parks', {
+        type: 'geogjson',
+        data: {
+          type: 'FeatureCollection',
+          features: []
+        }
+      });
+
+      // White overlay that pulses over accessible parks 
+      map.addLayer({
+        id: 'accessible-parks-pulse',
+        type: 'fill',
+        source: 'accessible-parks',
+        paint: {
+          'fill-color': '#FFFFFF',
+          'fill-opacity': 0
+        }
+      });
+
+      // Animate the overlay opacity
+      let pulseOpacity = 0;
+      let pulseDirection = 1;
+
+      function animateParks() {
+        pulseOpacity += 0.008 * pulseDirection;
+
+        if (pulseOpacity >= 0.35) {
+          pulseDirection = -1;
+        }
+
+        if (pulseOpacity <= 0) {
+          pulseDirection = 1;
+        }
+
+        map.setPaintProperty(
+          'accessible-parks-pulse',
+          'fill-opacity',
+          Math.max(0, Math.min(0.35, pulseOpacity))
+        );
+
+        requestAnimationFrame(animateParks);
+      }
+
+      animateParks();
     });
 
     // Display park information when clicked
@@ -260,13 +305,20 @@ fetch('./parks-polygon-representation.geojson')
 
     let parkCount = 0;
 
-    parkData.features.forEach(park => {
+    const accessibleParks = [];
 
+    parkData.features.forEach(park => {
       if (park.geometry &&
           turf.booleanIntersects(park, buffer)) {
         parkCount++;
+        accessibleParks.push(park);
       }
+    });
 
+    // Update the pulsing park layer
+    map.getSource('accessible-parks').setData({
+      type: 'FeatureCollection',
+      features: accessibleParks
     });
 
     // Display accessibility results
@@ -298,6 +350,11 @@ fetch('./parks-polygon-representation.geojson')
       console.log('Selected location:', selectedLocation);
 
     });
+
+  </script>
+
+</body>
+</html>
 
   </script>
 
