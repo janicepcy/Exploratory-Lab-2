@@ -14,7 +14,7 @@ The map was developed using MapLibre GL JS and Turf.js, combining geographic vis
 
 **Screenshot:**
 
-*Insert a screenshot of the map showing the 500 m buffer, highlighted parks, and accessibility results panel.*
+![Uploading Screenshot 2026-11-13 at 4.40.10 PM.png…]()
 
 ## Map Features and Interactivity
 
