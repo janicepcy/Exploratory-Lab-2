@@ -43,6 +43,16 @@ The dataset contains park polygon boundaries and associated attributes, includin
 - **HTML, CSS, and JavaScript** – Map layout, interface design, and interactive functionality.
 - **GitHub Pages** – Hosting and publishing the interactive map.
 
+## Collaboration, Resources, and AI Assistance
+
+This project builds upon my previous exploratory lab, which visualized Vancouver parks using a customized MapLibre basemap, park-size classifications, and interactive popups.
+
+For this lab, I extended the map by introducing Turf.js spatial analysis, a location-based accessibility buffer, an interactive results panel, and a pulsing effect for parks intersecting the selected buffer.
+
+I consulted MapLibre and Turf.js documentation to understand the functions used for geographic visualization and spatial analysis. I also used ChatGPT for debugging JavaScript, particularly for buffer generation, and the pulsing animation. I tested and revised the code through GitHub Pages to check that the interactive features functioned as intended.
+
+The design decisions, choice of dataset, accessibility question, and overall cartographic approach were developed as part of my own exploration of interactive web mapping.
+
 ## Reflective Analysis
 
 ### Design Decisions and Intended Insights
